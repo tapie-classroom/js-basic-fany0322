@@ -1,54 +1,146 @@
-let grid = [
-    [null, null, null, null],
-    [null, null, null, null],
-    [null, null, null, null],
-    [null, null, null, null]
-  ];
-  
-  // 빈 셀을 찾아주는 함수
-  function getEmptyCells() {
-    let emptyCells = [];
-    for (let row = 0; row < 4; row++) {
-      for (let col = 0; col < 4; col++) {
-        if (grid[row][col] === null) {
-          emptyCells.push({ row, col });
-        }
+let board = [
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0]
+]
+
+function newGame() {
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) board[i][j] = 0
+  spawn()
+  spawn()
+  render()
+}
+
+function spawn() {
+  const empty = []
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) if (board[i][j] === 0) empty.push([i, j])
+  if (empty.length === 0) return
+  const [x, y] = empty[Math.floor(Math.random() * empty.length)]
+  board[x][y] = Math.random() < 0.9 ? 2 : 4
+}
+
+function render() {
+  const grid = document.getElementById('grid')
+  grid.innerHTML = ''
+  for (let i = 0; i < 4; i++) {
+    const row = document.createElement('div')
+    row.className = 'grid-row'
+    for (let j = 0; j < 4; j++) {
+      const cell = document.createElement('div')
+      const value = board[i][j]
+      cell.className = 'grid-cell'
+      if (value !== 0) {
+        cell.textContent = value
+        cell.classList.add(`filled-${value}`)
+      }
+      row.appendChild(cell)
+    }
+    grid.appendChild(row)
+  }
+}
+
+function moveLeft() {
+  let moved = false
+  for (let i = 0; i < 4; i++) {
+    let row = board[i].filter(v => v !== 0)
+    for (let j = 0; j < row.length - 1; j++) {
+      if (row[j] === row[j + 1]) {
+        row[j] *= 2
+        row[j + 1] = 0
+        moved = true
       }
     }
-    return emptyCells;
+    row = row.filter(v => v !== 0)
+    while (row.length < 4) row.push(0)
+    if (row.join() !== board[i].join()) moved = true
+    board[i] = row
   }
-  
-  // 타일을 그리드에 배치하는 함수
-  function placeTile(row, col, value) {
-    const cell = document.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
-    const inner = cell.querySelector('.tile-inner');
-  
-    // 타일을 실제로 그리드에 표시
-    inner.textContent = value;  // 타일에 값 넣기
-    inner.style.fontSize = '4vh';  // 폰트 크기 조정
-    inner.style.color = '#776e65';  // 색상 설정
-    inner.style.fontWeight = 'bold';  // 두껍게 설정
-  
-    // 타일 스타일 추가
-    cell.classList.add(`tile-${value}`);
+  if (moved) {
+    spawn()
+    render()
   }
-  
-  // 두 개의 타일을 랜덤한 위치에 생성하는 함수
-  function generateTiles() {
-    let emptyCells = getEmptyCells(); // 빈 셀 구하기
-    if (emptyCells.length > 0) {
-      for (let i = 0; i < 2; i++) {  // 두 개의 타일을 배치
-        let randomIndex = Math.floor(Math.random() * emptyCells.length); // 랜덤으로 빈 셀 선택
-        let randomCell = emptyCells[randomIndex];  // 랜덤 셀
-        grid[randomCell.row][randomCell.col] = 2;  // 그리드에 2 삽입
-        placeTile(randomCell.row, randomCell.col, 2);  // UI에 2 배치
-        emptyCells.splice(randomIndex, 1);  // 배치한 셀은 빈 셀 목록에서 제거
+}
+
+function moveRight() {
+  let moved = false
+  for (let i = 0; i < 4; i++) {
+    let row = board[i].filter(v => v !== 0)
+    for (let j = row.length - 1; j > 0; j--) {
+      if (row[j] === row[j - 1]) {
+        row[j] *= 2
+        row[j - 1] = 0
+        moved = true
       }
     }
+    row = row.filter(v => v !== 0)
+    while (row.length < 4) row.unshift(0)
+    if (row.join() !== board[i].join()) moved = true
+    board[i] = row
   }
-  
-  // 페이지가 로드될 때 타일을 랜덤으로 생성
-  window.onload = function() {
-    generateTiles();  // 게임 시작 시 타일 생성
-  };
-  
+  if (moved) {
+    spawn()
+    render()
+  }
+}
+
+function moveUp() {
+  let moved = false
+  for (let j = 0; j < 4; j++) {
+    let col = []
+    for (let i = 0; i < 4; i++) col.push(board[i][j])
+    col = col.filter(v => v !== 0)
+    for (let i = 0; i < col.length - 1; i++) {
+      if (col[i] === col[i + 1]) {
+        col[i] *= 2
+        col[i + 1] = 0
+        moved = true
+      }
+    }
+    col = col.filter(v => v !== 0)
+    while (col.length < 4) col.push(0)
+    for (let i = 0; i < 4; i++) {
+      if (board[i][j] !== col[i]) moved = true
+      board[i][j] = col[i]
+    }
+  }
+  if (moved) {
+    spawn()
+    render()
+  }
+}
+
+function moveDown() {
+  let moved = false
+  for (let j = 0; j < 4; j++) {
+    let col = []
+    for (let i = 0; i < 4; i++) col.push(board[i][j])
+    col = col.filter(v => v !== 0)
+    for (let i = col.length - 1; i > 0; i--) {
+      if (col[i] === col[i - 1]) {
+        col[i] *= 2
+        col[i - 1] = 0
+        moved = true
+      }
+    }
+    col = col.filter(v => v !== 0)
+    while (col.length < 4) col.unshift(0)
+    for (let i = 0; i < 4; i++) {
+      if (board[i][j] !== col[i]) moved = true
+      board[i][j] = col[i]
+    }
+  }
+  if (moved) {
+    spawn()
+    render()
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') moveLeft()
+  else if (e.key === 'ArrowRight') moveRight()
+  else if (e.key === 'ArrowUp') moveUp()
+  else if (e.key === 'ArrowDown') moveDown()
+})
+
+window.onload = newGame
